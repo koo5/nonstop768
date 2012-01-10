@@ -10,6 +10,18 @@ const int ST = 7;
 
 byte leds[6][16];
 
+int a,b;
+int x,y;
+
+void ledon(int x, int y)
+{
+    leds[x/8][y] = leds[x/8][y] | (1<<(x%8));
+}
+void ledoff(int x, int y)
+{
+    leds[x/8][y] = leds[x/8][y] & ~(1<<(x%8));
+}
+
 void randomize()
 {
 /*    int i,j;
@@ -17,7 +29,20 @@ void randomize()
     for(j = 0; j < 16; j++)
     leds[i][j]=random(256);
 */
-    leds[random(6)][random(16)]=  (  leds[random(6)][random(16)]|(1<<random(8)))&~(1<<random(8));
+/*    leds[random(6)][random(16)]=  (  leds[random(6)][random(16)]|(1<<random(8)))&~(1<<random(8));
+*/
+    ledoff(x,y);
+    x=x+a;
+    y=y+b;
+    if(x==6*8-1)
+	a=-1;
+    if(x==0)
+	a=1;
+    if(y==15)
+	b=-1;
+    if(y==0)
+	b=1;
+    ledon(x,y);
 }
 
 void setup()
@@ -27,6 +52,7 @@ void setup()
     pinMode(ST,OUTPUT);
     pinMode(OE,OUTPUT);
     SPI.begin();
+    SPI.setBitOrder(LSBFIRST);
 }
 
 int row;
@@ -44,7 +70,7 @@ void loop()
     digitalWrite(ST,0);
     digitalWrite(OE,0);
     if(row++ > 2) row = 0;
-    if(animator++ > 1)
+    if(animator++ > 10)
     {
 	animator = 0;
 	randomize();
