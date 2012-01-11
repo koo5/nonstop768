@@ -8,30 +8,60 @@ const int B = 9;
 const int ST = 7;
 
 
-byte leds[6][16];
 
-int a,b;
-int x,y;
+const int L = 5;
+byte leds[L][6][16];
+byte dirs[6][16];
 
-void ledon(int x, int y)
+
+
+void led(int x, int y, int b)
 {
-    leds[x/8][y] = leds[x/8][y] | (1<<(x%8));
+    int l;
+    for(l=0;l<L;l++)
+    {
+	if (b >= L-l)
+            leds[l][x/8][y] &=~ (1<<(x%8));
+    	else
+    	    leds[l][x/8][y] |=  (1<<(x%8));
+    }
 }
-void ledoff(int x, int y)
+
+
+int getled(int x, int y)
 {
-    leds[x/8][y] = leds[x/8][y] & ~(1<<(x%8));
+    int l;
+    for(l=0;l<L;l++)
+	if (!(leds[l][x/8][y] & (1<<(x%8))))
+	    return L-l;
+    return 0;
 }
+
 
 void randomize()
 {
-/*    int i,j;
-    for(i = 0; i < 6; i++)
-    for(j = 0; j < 16; j++)
-    leds[i][j]=random(256);
-*/
-/*    leds[random(6)][random(16)]=  (  leds[random(6)][random(16)]|(1<<random(8)))&~(1<<random(8));
-*/
-    ledoff(x,y);
+    led(random(6*8),random(16),random(L));
+    int x,y,d,b;
+    d=dirs[x=random(6)][y=random(16)] & (1<<(b=random(8)));
+    if(!d)
+        dirs[x][y] |= 1<<b;
+    else
+        dirs[x][y] &= ~(1<<b);
+}
+
+void animate()
+{
+    int i,j;
+    for(i = 0; i < 6*8; i++)
+        for(j = 0; j < 16; j++)
+    	    led(i,j,  ( getled(i,j) + (dirs[i/8][j]&(1<<i%8) ? 1 : -1 )   ) );
+}
+
+int a,b;
+int x,y;
+void boing()
+{
+    led(x,y,0);
     x=x+a;
     y=y+b;
     if(x==6*8-1)
@@ -42,8 +72,10 @@ void randomize()
 	b=-1;
     if(y==0)
 	b=1;
-    ledon(x,y);
+    led(x,y,20);
 }
+
+
 
 void setup()
 {
@@ -53,27 +85,58 @@ void setup()
     pinMode(OE,OUTPUT);
     SPI.begin();
     SPI.setBitOrder(LSBFIRST);
+    SPI.setClockDivider(128);
+    int i,j;
+    	for(i = 0; i < 6*8; i++)
+    	    for(j = 0; j < 16; j++)
+		led(i,j, i %7);
+
 }
 
-int row;
+
+
+int row,frame=1;
 int animator;
 void loop()
 {
-    digitalWrite(OE,1);
-    digitalWrite(A, row&1);
-    digitalWrite(B, row&2);
+    static int la;
     int i,j;
     for(i = 0; i < 6; i++)
-    for(j = 0; j < 4; j++)
-    SPI.transfer(~leds[i][row+j*4]);
-    digitalWrite(ST,1);
+        for(j = 0; j < 4; j++)
+	    SPI.transfer( leds[la][i][row+j*4]);
     digitalWrite(ST,0);
+    digitalWrite(OE,1);
+    digitalWrite(ST,1);
+    digitalWrite(A, row&1);
+    digitalWrite(B, row&2);
     digitalWrite(OE,0);
-    if(row++ > 2) row = 0;
-    if(animator++ > 10)
+
+    if(row++ == 3)
+    {
+	row = 0;
+    
+        if (frame++ == 63)
+	    frame = 1;
+	    
+        la=0;
+	while(la!=L)
+        {
+	    if(frame & (1<<la))
+	    break;
+	    la++;
+        }
+
+    
+    }
+    if(animator++ > 5000)
     {
 	animator = 0;
-	randomize();
+	
+//	randomize();
+//	animate();
     }
-    delay(1);
+//    if(!(animator%500))
+//    	boing();
 }
+
+
