@@ -11,6 +11,9 @@ const int ST = 7;
 
 const int L = 5;
 byte leds[L][6][16];
+const int frames = (1<<L)-1;
+byte la[6][16][frames];
+
 byte dirs[6][16];
 
 
@@ -40,7 +43,6 @@ int getled(int x, int y)
 
 void randomize()
 {
-    led(random(6*8),random(16),random(L));
     int x,y,d,b;
     d=dirs[x=random(6)][y=random(16)] & (1<<(b=random(8)));
     if(!d)
@@ -54,25 +56,44 @@ void animate()
     int i,j;
     for(i = 0; i < 6*8; i++)
         for(j = 0; j < 16; j++)
-    	    led(i,j,  ( getled(i,j) + (dirs[i/8][j]&(1<<i%8) ? 1 : -1 )   ) );
+    	    led(i,j,  ( getled(i,j) + (dirs[i/8][j]&(1<<(i%8)) ? 1 : -1 )   ) );
 }
 
-int a,b;
-int x,y;
+
+
+
+typedef struct
+{
+    int a,b;
+    int x,y;
+
+} particle;
+
+
+const int PS = 16;
+particle ps[PS];
+
+
 void boing()
 {
-    led(x,y,0);
-    x=x+a;
-    y=y+b;
-    if(x==6*8-1)
-	a=-1;
-    if(x==0)
-	a=1;
-    if(y==15)
-	b=-1;
-    if(y==0)
-	b=1;
-    led(x,y,20);
+    int i;
+    for (i=0;i<PS;i++)
+    {
+    	led(ps[i].x,ps[i].y,0);
+	ps[i].a = random(3)-1;;
+        ps[i].x+=ps[i].a;
+	ps[i].y+=ps[i].b;
+        if(ps[i].x>47)
+		ps[i].x=0;
+        if(ps[i].x<0)
+		ps[i].x=47;
+        if(ps[i].y>15)
+		ps[i].y=0;
+        if(ps[i].y<0)
+		ps[i].y=15;
+	int o = (ps[i].x<12 || (ps[i].x > 23 && ps[i].x < 36));
+        led(ps[i].x,ps[i].y,ps[i].y%L);
+    }
 }
 
 
@@ -86,24 +107,60 @@ void setup()
     SPI.begin();
     SPI.setBitOrder(LSBFIRST);
     SPI.setClockDivider(128);
+    
+    
+    
     int i,j;
     	for(i = 0; i < 6*8; i++)
+	{
+	    int o = (i<12 || (i > 23 && i < 36));
     	    for(j = 0; j < 16; j++)
-		led(i,j, i %7);
+		led(i,j, !o * j%L);
+	}
 
+
+    pinMode(A0, INPUT);
+    randomSeed(analogRead(A0));
+    for (i=0;i<PS;i++)
+    {
+        ps[i].b=-1;
+        ps[i].x=random(48);
+        ps[i].y=i;
+    }
+    
+    
+    for(i=0;i<6;i++)
+    for(j=0;j<16;j++)
+    {
+	int off = random(8);
+	int f;
+	for(f=0;f<frames;f++)
+	{
+            int lap=0;
+	    while(lap!=L-1)
+            {
+		    if((off+f)%frames & (1<<lap))
+			break;
+		    lap++;
+            }
+
+            la[i][j][f]=lap;
+        }
+    }
 }
-
 
 
 int row,frame=1;
 int animator;
 void loop()
 {
-    static int la;
     int i,j;
     for(i = 0; i < 6; i++)
         for(j = 0; j < 4; j++)
-	    SPI.transfer( leds[la][i][row+j*4]);
+        {
+    	    int a = la[i][row+j*4][frame];
+	    SPI.transfer(leds[a][i][row+j*4]);
+	}
     digitalWrite(ST,0);
     digitalWrite(OE,1);
     digitalWrite(ST,1);
@@ -111,32 +168,32 @@ void loop()
     digitalWrite(B, row&2);
     digitalWrite(OE,0);
 
+//	randomize();
+//	animate();
+//	led(random(6*8),random(16),random(L));
+
+
     if(row++ == 3)
     {
 	row = 0;
     
-        if (frame++ == 63)
-	    frame = 1;
-	    
-        la=0;
-	while(la!=L)
+//    	    if(animator++==5)
+    	    {
+//		boing();
+		animator=0;
+	    }
+
+
+        if (frame++ == (1<<L)-1)
         {
-	    if(frame & (1<<la))
-	    break;
-	    la++;
-        }
+        
+
+	    frame = 1;
+	}
 
     
     }
-    if(animator++ > 5000)
-    {
-	animator = 0;
-	
-//	randomize();
-//	animate();
-    }
-//    if(!(animator%500))
-//    	boing();
 }
+
 
 
