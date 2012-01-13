@@ -1,7 +1,7 @@
 // 16 dead
 #include <SPI.h>
 //while true; do stty -F /dev/ttyACM0 115200&&netcat -p 768 -l > /dev/ttyACM0; done
-
+//while true; do date "+%H%M%S%d.%m.";echo -e "\n"; sleep 1; done | nc 10.55 768
 
 
 
@@ -330,7 +330,7 @@ void setup()
 void textin()
 {
 
-	if(lasttext < 16 && Serial.available())
+	if(lasttext < 19 && Serial.available())
 	{
 		char in  =  Serial.read();
 		if (in != 10)
@@ -339,6 +339,8 @@ void textin()
 		    if(++te>11)
 			te = 0;
 		}
+		else
+			te = 0;
 		lasttext = 20;
 	}
 	if(lasttext)
@@ -360,11 +362,11 @@ void loop()
 //    	    int b = la[L-1];// ( rnd[i][j] + frame)];
 //	    SPI.transfer((rnd[i][j] == frame) ?  random(255) : 255);
 //	    SPI.transfer(leds[b][i][row+j*4]);
-//	    byte cursor = (y%8==7)   &&    (te/6==y/8)    &&    (te%6==i)    ?   ~lasttext    :    0xff;
+	    byte cursor = (((y%8==7)   &&    (te/6==y/8)    &&    (te%6==i))    ?   ~lasttext    :    0xff);
 	    char ch  = text[i+y/8*6];
 //	    SPI.transfer(ch);
 //	    SPI.transfer(~font[ ch + (128*(y%8)) ]);
-	    SPI.transfer((rnd[i][j] == frame)?~font[ ch + 128*(y%8) ]:255);
+	    SPI.transfer((rnd[i][j] == frame)?(~font[ ch + 128*(y%8)  ]& cursor):255);
 //	    PORTC = 0b00111 | (oldrow<<3) | ((~j&1)<<5);
 	}
 
