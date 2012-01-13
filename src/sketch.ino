@@ -1,5 +1,9 @@
+// 16 dead
 #include <SPI.h>
 //while true; do stty -F /dev/ttyACM0 115200&&netcat -p 768 -l > /dev/ttyACM0; done
+
+
+
 
 byte font[] = {
    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -105,13 +109,15 @@ int te; // cursor
 
 
 
-const int OE =A5;
-const int B = A4;
-const int A = A3;
+const int A = A0;
+const int B = A1;
 const int ST =A2;
+const int OE =A3;
 
 
 
+
+/*
 
 int oo(int x)
 {
@@ -125,6 +131,8 @@ int r(int x)
 {
     return (x > 35);
 }
+*/
+
 
 
 
@@ -265,17 +273,27 @@ void setupleds()
         ps[i].y=random(11)+1;
     }
 }
+*/
 
 
-setuplayers()
+
+
+
+
+
+
+
+
+
+void setuplayers()
 {
 	int f;
-	for(f=0;f<frames*2;f++)
+	for(f=0;f<frames;f++)
 	{
             int lap=0;
 	    while(lap!=L-1)
             {
-		    if(f & (1<<(lap/2)))
+		    if(f & (1<<lap))
 			break;
 		    lap++;
             }
@@ -285,29 +303,27 @@ setuplayers()
 
 
 
-*/
+
 
 void setup()
 {
-    Serial.begin(115200);
     pinMode(A,OUTPUT);
     pinMode(B,OUTPUT);
     pinMode(ST,OUTPUT);
     pinMode(OE,OUTPUT);
-    SPI.begin();
-    SPI.setBitOrder(LSBFIRST);
+    pinMode(A4, INPUT);
+    digitalWrite(OE, 1);
     SPI.setClockDivider(128);
-    pinMode(A0, INPUT);
-    randomSeed(analogRead(A0));
-
-
+    SPI.setBitOrder(LSBFIRST);
+    randomSeed(analogRead(A4));
+    Serial.begin(115200);
+    setuplayers();
+    SPI.begin();
 
     int i,j;
-    
-    
     for(i=0;i<6;i++)
 	for(j=0;j<16;j++)
-	    rnd[i][j] = random(frames);
+	    rnd[i][j] = random(frames-1)+1;
     
 }
 
@@ -332,47 +348,41 @@ void textin()
 
 
 
-int row,frame=1;
+byte row,oldrow,frame=1;
 int animator;
 void loop()
 {
-    int i,j,k=0;
+    int i,j;
     for(i = 0; i < 6; i++)
         for(j = 0; j < 4; j++)
         {
+    	    int y = row+j*4;
 //    	    int b = la[L-1];// ( rnd[i][j] + frame)];
-//	    SPI.transfer(random(255));
+//	    SPI.transfer((rnd[i][j] == frame) ?  random(255) : 255);
 //	    SPI.transfer(leds[b][i][row+j*4]);
-	    SPI.transfer((rnd[i][j]+frame == frames)  ?  (~font[   text[i+(row+j*4)/8*6]    +128*((row+j*4)%8)]   &   ((((row+j*4)%8==7)   &&    (te/6==(row+j*4)/8)    &&    (te%6==i)    ?   ~ lasttext    :    0xff))) : 255);
+//	    byte cursor = (y%8==7)   &&    (te/6==y/8)    &&    (te%6==i)    ?   ~lasttext    :    0xff;
+	    char ch  = text[i+y/8*6];
+//	    SPI.transfer(ch);
+//	    SPI.transfer(~font[ ch + (128*(y%8)) ]);
+	    SPI.transfer((rnd[i][j] == frame)?~font[ ch + 128*(y%8) ]:255);
+//	    PORTC = 0b00111 | (oldrow<<3) | ((~j&1)<<5);
 	}
 
 
 
+	PORTC &=  0b1011;
+	PORTC  = 0b0100 | row;
 
+/*
+	PORTC |=  0b100;
+//	PORTC &=  0b0111;
+	PORTC  = 0b1000 | row;
+*/
 
-
-
-
-    PORTC |= 36;
-    PORTC = 219 & (row<<3);
-
-
-
-
-
-
-
-
-//    fps++;fpS++;
-
-
-
-
-
-    if(row++ == 3)
+    if(3==row++)
     {
 	row = 0;
-        if (++frame > (1<<L)-1)
+        if (++frame > frames)
         {
 	    frame = 1;
 	    textin();
@@ -381,29 +391,4 @@ void loop()
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-    digitalWrite(ST,0);
-    digitalWrite(OE,1);
-    digitalWrite(ST,1);
-    digitalWrite(A, row&1);
-    digitalWrite(B, row&2);
-    digitalWrite(OE,0);
-*/
-
-
-//	led(random(6*8),random(16),random(L));
+//    fps++;fpS++;
