@@ -1,4 +1,4 @@
-// 16 dead
+// 21 dead
 #include <SPI.h>
 //while true; do stty -F /dev/ttyACM0 115200&&netcat -p 768 -l > /dev/ttyACM0; sleep 0.1; done
 //while true; do date "+%H%M%S%d.%m.%n";echo -e "\n"; sleep 1; done | nc 10.55 768
@@ -100,7 +100,7 @@ static unsigned char font[] = {
 
 
 
-const int L = 5; // levels of brightness
+const int L = 2; // levels of brightness
 const int frames = (1<<L)-1; // the least bright led will go on only once in this many redraws of the display
 byte la[frames*2]; //selects one of L layers, each populated by on and off states of leds, the full bright led will be set on in all of the layers, the least bright only in the last, least displayed one. it says that the least bright layer is only displayed once, in the middle of the frames cycle
 byte rnd[6][16]; // random frame offset to reduce flicker
@@ -110,11 +110,10 @@ int te; // cursor
 
 
 
-
-const int A = A0;
-const int B = A1;
-const int ST =A2;
-const int OE =A3;
+const int A = A2;
+const int B = A3;
+const int ST =A5;
+const int OE =A4;
 
 
 
@@ -309,16 +308,16 @@ void setuplayers()
 
 void setup()
 {
-    pinMode(OE,OUTPUT);
-    digitalWrite(OE, 1);
     pinMode(A,OUTPUT);
     pinMode(B,OUTPUT);
     pinMode(ST,OUTPUT);
-    pinMode(A4, INPUT);
+    pinMode(OE,OUTPUT);
+    digitalWrite(OE, 1);
+    pinMode(A5, INPUT);
+    randomSeed(analogRead(A5));
     SPI.setClockDivider(128);
     SPI.setBitOrder(LSBFIRST);
-    randomSeed(analogRead(A4));
-    Serial.begin(115200);
+    Serial.begin(57600);
     setuplayers();
     SPI.begin();
 
@@ -364,7 +363,7 @@ byte row,frame=1,oldframe = frames;
 unsigned long fps;
 void loop()
 {
-    PORTC = 0b1000 | row;
+    PORTC = 0b010000 | (row<<2);
 
     int i,j;
     for(i = 0; i < 6; i++)
@@ -372,31 +371,37 @@ void loop()
         {
     	    int y = row+j*4;
 //    	    int b = la[L-1];// ( rnd[i][j] + frame)];
-//	    SPI.transfer((rnd[i][j] == frame) ?  random(255) : 255);
+	    SPI.transfer((rnd[i][j] == frame) ?  random(255) : 255);
 //	    SPI.transfer(leds[b][i][row+j*4]);
 //	    byte cursor = (((y%8==7)   &&    (te/6==y/8)    &&    (te%6==i))    ?   ~lasttext    :    0xff);
-	    char ch  = text[i+y/8*6];
+//	    char ch  = text[i+y/8*6];
 //	    SPI.transfer(ch);
 //	    SPI.transfer(~font[ ch + (128*(y%8)) ]);
 //	    SPI.transfer(~font[ ch + (128*(y%8)) ] | ((rnd[i][j] != frame)?0b11111111:0));
-	    SPI.transfer(~font[ ch + (128*(y%8)) ] | ((rnd[i][j] != frame)*0b10101010) | ((rnd[i][j] != oldframe)*0b01010101));
-//	    PORTC = 0b00111 | (oldrow<<3) | ((~j&1)<<5);
+//	    SPI.transfer(~font[ ch + (128*(y%8)) ] | ((rnd[i][j] != frame)*0b10101010) | ((rnd[i][j] != oldframe)*0b01010101));
 
 	}
-    PORTC = 0b0100 | row;
-    
-    if(3==row++)
+
+/*A5 PC5 storage
+A4 PC4 OD
+A3 PC3 B
+A2 PC2 A
+*/
+    PORTC = 0b100000 | (row<<2);
+
+    if(3==row)
     {
-	row = 0;
         if (++frame > frames)
         {
 	    frame = 1;
-	    textin();
-	    
-//	    snprintf(text, 13,"%012d",  millis());// / ++fps
+//	    textin();
+	    snprintf(text, 13,"%012d",  millis());// / ++fps
 	}
     	oldframe = frame;
     }
+
+    if(3==row++)
+	row = 0;
     
 }
 
