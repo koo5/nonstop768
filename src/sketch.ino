@@ -110,10 +110,11 @@ int te; // cursor
 
 
 
-const int A = A2;
-const int B = A3;
-const int ST =A5;
-const int OE =A4;
+const int A = A4;
+const int B = A5;
+const int ST =7;
+const int OD =6;
+const int RND = A0;
 
 
 
@@ -139,7 +140,7 @@ int r(int x)
 
 
 /*
-byte leds[L][6][16];
+//byte leds[L][6][16];
 //byte dirs[6][16];
 
 
@@ -308,18 +309,16 @@ void setuplayers()
 
 void setup()
 {
-    pinMode(10,OUTPUT);
-    pinMode(11,OUTPUT);
-    pinMode(12,OUTPUT);
-    pinMode(13,OUTPUT);
     pinMode(A,OUTPUT);
     pinMode(B,OUTPUT);
+    pinMode(SCK,OUTPUT);
+    pinMode(MOSI,OUTPUT);
     pinMode(ST,OUTPUT);
-    pinMode(OE,OUTPUT);
-    digitalWrite(OE, 1);
-    pinMode(A5, INPUT);
-    randomSeed(analogRead(A5));
-    SPI.setClockDivider(128);
+    pinMode(OD,OUTPUT);
+    digitalWrite(OD, 1);
+    pinMode(RND, INPUT);
+    randomSeed(analogRead(RND));
+    SPI.setClockDivider(2);
     SPI.setBitOrder(LSBFIRST);
     Serial.begin(57600);
     setuplayers();
@@ -367,60 +366,64 @@ byte row,frame=1,oldframe = frames;
 unsigned long fps;
 void loop()
 {
-    PORTC = 0b000000 | (row<<2);
 
+    int m = millis()/100;
     int i,j;
+//    digitalWrite(OD, 1);
+
     for(i = 0; i < 6; i++)
     {
+	PORTD=0b00000000;
         for(j = 0; j < 4; j++)
         {
-    	    int y = row+j*4;
-//    	    int b = la[L-1];// ( rnd[i][j] + frame)];
+
+	    int y = row+j*4;
+//	    int b = la[L-1];// ( rnd[i][j] + frame)];
 //	    SPI.transfer((rnd[i][j] == frame) ?  random(255) : 255);
 //	    SPI.transfer(leds[b][i][row+j*4]);
-
 //	    byte cursor = (((y%8==7)   &&    (te/6==y/8)    &&    (te%6==i))    ?   ~lasttext    :    0xff);
 //	    char ch  = text[i+y/8*6];
-//	    SPI.transfer(ch);
+	    SPI.transfer(m);
 //	    SPI.transfer(~font[ ch + (128*(y%8)) ]);
 //	    SPI.transfer(~font[ ch + (128*(y%8)) ] | ((rnd[i][j] != frame)?0b11111111:0));
 //	    SPI.transfer(~font[ ch + (128*(y%8)) ] | ((rnd[i][j] != frame)*0b10101010) | ((rnd[i][j] != oldframe)*0b01010101));
-/*	    for(int k = 0;k<8;k++)
+/*
+	    for(int k = 0;k<8;k++)
 	    {
-	    digitalWrite(10, random(2));
-	    digitalWrite(11, random(2));
-	    digitalWrite(12, random(2));
-	    digitalWrite(13,0);
-	    digitalWrite(13,1);
+	    digitalWrite(MOSI, (m&(1<<k)));
+	    digitalWrite(SCK,0);
+	    digitalWrite(SCK,1);
 	    }
 */
-	    SPI.transfer(random(255));
-	}
-        PORTC=0b010000| (row<<2);
+//	    SPI.transfer(m);
+	    PORTD=0b01000000;
 
+	}
     }
 
-/*A5 PC5 storage
-A4 PC4 OD
-A3 PC3 B
-A2 PC2 A
-*/
-    PORTC = 0b110000 | (row<<2);
+    PORTC = row<<4;
+    digitalWrite(ST, 0);
+    digitalWrite(ST, 1);
+//    digitalWrite(OD, 0);
+/*    PORTC = 0b110000 | (row<<2);
     PORTC = 0b010000 | (row<<2);
     PORTC = 0b100000 | (row<<2);
+**/
 
-    if(3==row)
+
+/*    if(3==row)
     {
         if (++frame > frames)
         {
 	    frame = 1;
 //	    textin();
-//	    snprintf(text, 13,"%012d",  millis());// / ++fps
+//	    snprintf(text, 13,"%012d",  millis()/1000);// / ++fps
 	}
     	oldframe = frame;
     }
-
-    if(3==row++)
+*/
+    row++;
+    if(4==row)
 	row = 0;
     
 }
