@@ -36,7 +36,7 @@ void bounce(int i)
 		ps[i].a=-ps[i].a;
 
 //		Y:
-        if(ps[i].y>12)
+        if(ps[i].y>15)
 		ps[i].b=-ps[i].b;
         if(ps[i].y<1)
 		ps[i].b=-ps[i].b;
@@ -68,8 +68,8 @@ void setupleds()
 
     for (i=0;i<PS;i++)
     {
-        ps[i].a=(random(20)-10)/10.0;
-        ps[i].b=(random(20)-10)/10.0;
+        ps[i].a=(random(200)-100)/100.0;
+        ps[i].b=(random(200)-100)/100.0;
         ps[i].x=random(36)+10;
         ps[i].y=random(11)+1;
     }
