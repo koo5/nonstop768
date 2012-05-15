@@ -24,7 +24,7 @@ typedef struct
 } particle;
 
 
-const int PS = 3;
+const int PS = 3*5;
 particle ps[PS];
 
 
@@ -68,8 +68,8 @@ void setupleds()
 
     for (i=0;i<PS;i++)
     {
-        ps[i].a=(random(200)-100)/100.0;
-        ps[i].b=(random(200)-100)/100.0;
+        ps[i].a=(random(2000)-1000)/10000.0;
+        ps[i].b=(random(2000)-1000)/10000.0;
         ps[i].x=random(36)+10;
         ps[i].y=random(11)+1;
     }
@@ -90,6 +90,8 @@ const int RND = A3;
 
 void setup()
 {
+    pinMode(A2,OUTPUT);
+    digitalWrite(A2, 1);
     pinMode(A,OUTPUT);
     pinMode(B,OUTPUT);
     pinMode(SCK,OUTPUT);
@@ -103,9 +105,10 @@ void setup()
     SPI.setBitOrder(LSBFIRST);
     SPI.begin();
     setupleds();
+    Serial.begin(57600);
 }
 
-
+char brightness;
 byte row,frame=1;
 void loop()
 {
@@ -121,8 +124,9 @@ void loop()
         {
 	    dead++;
 	    int y = row+j*4;
-	    SPI.transfer(leds[i][y]);
 	    PORTD=0b01000000;
+
+	    SPI.transfer(leds[i][y]);
 
 	}
     }
@@ -130,12 +134,14 @@ void loop()
     digitalWrite(ST, 0);
     PORTC = row<<4;
     digitalWrite(ST, 1);
-
+    brightness = 6*((analogRead(RND)-100)/5);
+    
 
     if (++frame >15)
     {
 	boing();
 	frame = 0;
+	Serial.println((int)brightness);
     }
     
     if(4==++row)
