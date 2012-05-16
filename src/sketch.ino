@@ -2,20 +2,27 @@
 
 
 
-byte bri = 0;
-const byte levels = 10;
+byte bri = 2;
+const byte levels = 4;
 const byte width = 4;//of display in bytes
 byte leds[levels][width][16];
 
-void led(int x, int y, int b)
+
+void led(byte x, byte y, byte b)
 {
     if(x<0)return;
     if(x>=width*8)return;
     if(y<0)return;
     if(y>=16)return;
-    
-    int l;
-    for(l=0;l<levels;l++)
+    if (b>1)
+    {
+	if ((x<4)||((x>15)&&(x<28)))
+    	{
+    		if(x<4)b++;
+    		b=b/2;
+ 	}
+    }
+    for(byte l=0;l<levels;l++)
     {
 	if (b > l)
             leds[l][x/8][y] &=~ (1<<(x%8));
@@ -65,7 +72,7 @@ void boing()
         ps[i].x+=ps[i].a;
 	ps[i].y+=ps[i].b;
 
-        led(ps[i].x,ps[i].y,100);
+        led(ps[i].x,ps[i].y,bri);
     }
 }
 
@@ -79,14 +86,28 @@ void cls(byte b)
 }
 
 
+void randomspeed(byte i,float div)
+{
+        ps[i].a=(random(2000)-1000)/div;
+        ps[i].b=(random(2000)-1000)/div;
+}
+
+void randomspeeds(float div)
+{
+    for (int i=0;i<PS;i++)
+    {
+        ps[i].a=(random(2000)-1000)/div;
+        ps[i].b=(random(2000)-1000)/div;
+    }
+}
+
 void setupleds()
 {
-    cls(bri);
+    cls(0);
     int i;
     for (i=0;i<PS;i++)
     {
-        ps[i].a=(random(2000)-1000)/10000.0;
-        ps[i].b=(random(2000)-1000)/10000.0;
+    	randomspeed(i, 100000);
         ps[i].x=random(width*8);
         ps[i].y=random(16);
     }
@@ -131,7 +152,7 @@ byte row,frame=1;
 void loop()
 {
     int i,j;
-    int brightness = level;
+    int brightness = level+2;
     for(i = 0; i < width; i++)
     {
 	if(brightness-->0)PORTD=0b00000000;
@@ -151,7 +172,7 @@ void loop()
     PORTC = row<<4;
     digitalWrite(ST, 1);
 
-    if (++frame >8)
+    if (++frame >9)
     {
 	boing();
 	frame = 0;
@@ -164,8 +185,17 @@ void loop()
 		case '-':
 		    bri--;
 		    break;
+		case '1':
+			randomspeeds(1000);
+		 	break;
+		case '2':
+			randomspeeds(10000);
+		 	break;
+		case '3':
+			randomspeeds(100000);
+		 	break;
 	    }
-	    cls(bri);
+	    //cls(bri);
 	    Serial.println(bri);
 	}
     }
