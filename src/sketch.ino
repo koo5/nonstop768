@@ -146,9 +146,6 @@ void setup()
     SPI.begin();
     setupleds();
     Serial.begin(57600);
-    cls(0);
-    back=!back;
-    cls(0);
     Timer1.initialize(1000);
     Timer1.attachInterrupt(draw);
 }
@@ -156,7 +153,7 @@ void setup()
 
 void loop()
 {
-	cls(0);
+	memset(leds[back], 255, levels*width*16);
 	boing();
 	back=!back;
 	if(Serial.available())
