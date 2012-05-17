@@ -1,11 +1,13 @@
 #include <SPI.h>
+#include <TimerOne.h>
 
 
 
-byte bri = 2;
+byte back;
+byte bri = 3;
 const byte levels = 4;
 const byte width = 4;//of display in bytes
-byte leds[levels][width][16];
+byte leds[2][levels][width][16];
 
 
 void led(byte x, byte y, byte b)
@@ -25,9 +27,9 @@ void led(byte x, byte y, byte b)
     for(byte l=0;l<levels;l++)
     {
 	if (b > l)
-            leds[l][x/8][y] &=~ (1<<(x%8));
+            leds[back][l][x/8][y] &=~ (1<<(x%8));
     	else
-    	    leds[l][x/8][y] |=  (1<<(x%8));
+    	    leds[back][l][x/8][y] |=  (1<<(x%8));
     }
 }
 
@@ -47,9 +49,9 @@ particle ps[PS];
 
 void bounce(int i)
 {
-        if(ps[i].x>width*8)
+        if(ps[i].x>15)//width*8)
 		ps[i].a=-ps[i].a;
-        if(ps[i].x<1)
+        if(ps[i].x<4)
 		ps[i].a=-ps[i].a;
 
 //		Y:
@@ -108,7 +110,7 @@ void setupleds()
     for (i=0;i<PS;i++)
     {
     	randomspeed(i, 100000);
-        ps[i].x=random(width*8);
+        ps[i].x=random(16);
         ps[i].y=random(16);
     }
 }
@@ -138,44 +140,25 @@ void setup()
     pinMode(OD,OUTPUT);
     digitalWrite(OD, 1);
     pinMode(RND, INPUT);
-    randomSeed(10);
+    randomSeed(1);
     SPI.setClockDivider(2);
     SPI.setBitOrder(LSBFIRST);
     SPI.begin();
     setupleds();
     Serial.begin(57600);
+    cls(0);
+    back=!back;
+    cls(0);
+    Timer1.initialize(1000);
+    Timer1.attachInterrupt(draw);
 }
 
 
-int level=1;
-byte row,frame=1;
 void loop()
 {
-    int i,j;
-    int brightness = level+2;
-    for(i = 0; i < width; i++)
-    {
-	if(brightness-->0)PORTD=0b00000000;
-        for(j = 0; j < 4; j++)
-        {
-	    if(brightness==0)PORTD=0b01000000;
-	    int y = row+j*4;
-	    if(brightness==1)PORTD=0b01000000;
-	    SPI.transfer(leds[level][i][y]);
-	    PORTD=0b01000000;
-
-
-	}
-    }
-
-    digitalWrite(ST, 0);
-    PORTC = row<<4;
-    digitalWrite(ST, 1);
-
-    if (++frame >9)
-    {
+	cls(0);
 	boing();
-	frame = 0;
+	back=!back;
 	if(Serial.available())
 	{
 	    switch(Serial.read()){
@@ -195,11 +178,34 @@ void loop()
 			randomspeeds(100000);
 		 	break;
 	    }
-	    //cls(bri);
 	    Serial.println(bri);
 	}
+}
+
+
+byte row, level;
+void draw()
+{
+    int i,j;
+    int brightness = level+2;
+    for(i = 0; i < width; i++)
+    {
+	if(brightness-->0)PORTD=0b00000000;
+        for(j = 0; j < 4; j++)
+        {
+	    if(brightness==0)PORTD=0b01000000;
+	    int y = row+j*4;
+	    if(brightness==1)PORTD=0b01000000;
+	    SPI.transfer(leds[!back][level][i][y]);
+	    PORTD=0b01000000;
+
+
+	}
     }
-    
+
+    PORTC = row<<4;
+    PORTD = 0b11000000;
+
     if(4==++row)
     {
 	row = 0;
@@ -207,7 +213,6 @@ void loop()
 	if(level == levels)
 	    level = 0;
     }
-    
 }
 
 
