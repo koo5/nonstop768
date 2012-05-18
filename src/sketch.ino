@@ -51,7 +51,7 @@ void bounce(int i)
 {
         if(ps[i].x>15)//width*8)
 		ps[i].a=-ps[i].a;
-        if(ps[i].x<4)
+        if(ps[i].x<1)
 		ps[i].a=-ps[i].a;
 
 //		Y:
@@ -127,7 +127,7 @@ const int ST =7;
 const int OD =6;
 const int RND = A3;
 
-
+int r;
 void setup()
 {
     pinMode(A2,OUTPUT);
@@ -140,13 +140,13 @@ void setup()
     pinMode(OD,OUTPUT);
     digitalWrite(OD, 1);
     pinMode(RND, INPUT);
-    randomSeed(1);
+    Serial.begin(57600);
+    randomSeed(analogRead(RND));
     SPI.setClockDivider(2);
     SPI.setBitOrder(LSBFIRST);
     SPI.begin();
     setupleds();
-    Serial.begin(57600);
-    Timer1.initialize(1000);
+    Timer1.initialize(900);
     Timer1.attachInterrupt(draw);
 }
 
@@ -175,16 +175,16 @@ void loop()
 			randomspeeds(100000);
 		 	break;
 	    }
-	    Serial.println(bri);
 	}
+
 }
 
 
 byte row, level;
 void draw()
 {
+    int brightness = level+3;
     int i,j;
-    int brightness = level+2;
     for(i = 0; i < width; i++)
     {
 	if(brightness-->0)PORTD=0b00000000;
@@ -194,14 +194,12 @@ void draw()
 	    int y = row+j*4;
 	    if(brightness==1)PORTD=0b01000000;
 	    SPI.transfer(leds[!back][level][i][y]);
-	    PORTD=0b01000000;
-
-
+	    if(brightness==2)PORTD=0b01000000;
 	}
     }
-
-    PORTC = row<<4;
+    PORTD=0b01000000;
     PORTD = 0b11000000;
+    PORTC = row<<4;
 
     if(4==++row)
     {

@@ -1,0 +1,7 @@
+General Protection Fault License 1.0.
+You may only use, distribute, et cetera, this software, and the license itself, under this license or in a way helpful to Free software.
+You may relicense this software for special purposes that are in line with the spirit of Free software,
+but never in a way that would subvert the intended viralness and reach of this or the other freedoms granting licenses.
+You can modify, interpret, bend or break this license in any way that is helpful to the ideals of Free, user friendly software,
+with the intent of making it future-proof.
+Any tricks against the intent of this license, and/or stemming from imperfections in this license or good law itself are forbidden.
