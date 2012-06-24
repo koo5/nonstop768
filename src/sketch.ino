@@ -17,7 +17,8 @@
 
 
 
-char text[9] = "10.55 99";
+  char text[9] = "        ";
+//char text[9] = "10.55 99";
 int lasttext=0; // a downward counter thats set high after a serial read
 int te =0; // cursor
 
